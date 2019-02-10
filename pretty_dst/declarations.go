@@ -134,17 +134,17 @@ func (s *StructureDeclaration) AddField(name string, _type string) {
 
 //removes field from structure by name
 func (s *StructureDeclaration) RemoveField(name string) error {
-	index, _ := s.FindField(name)
+	index, _ := findField(s.fields, name)
 	if index < 0 {
 		return fmt.Errorf("Trying to remove unexisting field ")
 	}
-	s.removeField(index)
+	removeField(s.fields, index)
 	return nil
 }
 
 //find field position in FieldList
-func (s *StructureDeclaration) FindField(fieldName string) (int, *dst.Field) {
-	for key, field := range s.fields.List {
+func findField(fields *dst.FieldList, fieldName string) (int, *dst.Field) {
+	for key, field := range fields.List {
 		for _, name := range field.Names {
 			if name.Name == fieldName {
 				return key, field
@@ -155,6 +155,6 @@ func (s *StructureDeclaration) FindField(fieldName string) (int, *dst.Field) {
 }
 
 //removes field from FieldList by index
-func (s *StructureDeclaration) removeField(id int) {
-	s.fields.List = append(s.fields.List[:id], s.fields.List[id+1:]...)
+func removeField(fields *dst.FieldList, id int) {
+	fields.List = append(fields.List[:id], fields.List[id+1:]...)
 }
