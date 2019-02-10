@@ -3,7 +3,7 @@ package olivere_v6_pipelines
 import (
 	"fmt"
 	"github.com/dlclark/regexp2"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/pretty_dst"
+	"github.com/dkonovenschi/aggretastic-sync/pretty_dst"
 	"go/ast"
 	"go/parser"
 	"go/printer"

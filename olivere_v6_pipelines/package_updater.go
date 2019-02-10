@@ -2,7 +2,7 @@ package olivere_v6_pipelines
 
 import (
 	"fmt"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/cmd"
+	"github.com/dkonovenschi/aggretastic-sync/cmd"
 )
 
 type packageUpdaterPipeline struct {

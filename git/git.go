@@ -4,7 +4,7 @@ package git
 import (
 	"bytes"
 	"fmt"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/errors"
+	"github.com/dkonovenschi/aggretastic-sync/errors"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"io/ioutil"

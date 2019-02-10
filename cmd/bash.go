@@ -3,7 +3,7 @@ package cmd
 
 import (
 	"fmt"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/errors"
+	"github.com/dkonovenschi/aggretastic-sync/errors"
 	"io/ioutil"
 	"os"
 	"os/exec"

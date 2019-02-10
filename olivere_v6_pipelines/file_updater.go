@@ -2,8 +2,8 @@ package olivere_v6_pipelines
 
 import (
 	"github.com/dave/dst"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/cmd"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/pretty_dst"
+	"github.com/dkonovenschi/aggretastic-sync/cmd"
+	"github.com/dkonovenschi/aggretastic-sync/pretty_dst"
 	"go/token"
 	"strings"
 )

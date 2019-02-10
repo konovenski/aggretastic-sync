@@ -1,6 +1,6 @@
 package olivere_v6_pipelines
 
-import "gitlab.com/dmitry.konovenschi/aggretastic-sync/git"
+import "github.com/dkonovenschi/aggretastic-sync/git"
 
 type gitPipeline struct {
 	Url string

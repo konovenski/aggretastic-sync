@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/joho/godotenv"
-	"gitlab.com/dmitry.konovenschi/aggretastic-sync/olivere_v6_pipelines"
+	"github.com/dkonovenschi/aggretastic-sync/olivere_v6_pipelines"
 	"log"
 	"os"
 )
