@@ -138,7 +138,7 @@ func (s *StructureDeclaration) RemoveField(name string) error {
 	if index < 0 {
 		return fmt.Errorf("Trying to remove unexisting field ")
 	}
-	s.removeField(s.fields, index)
+	s.removeField(index)
 	return nil
 }
 
