@@ -2,7 +2,7 @@
 package errors
 
 //Panic with msg error if err is not nill
-func PanicOnError(err error, msg error) {
+func PanicOnError(msg error, err error) {
 	if err != nil {
 		if msg != nil {
 			panic(msg.Error() + err.Error())

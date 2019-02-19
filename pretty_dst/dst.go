@@ -9,12 +9,12 @@ package pretty_dst
 import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
+	"github.com/dkonovenschi/aggretastic-sync/errors"
 	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"log"
-	"os"
+	"io"
 	"regexp"
 )
 
@@ -25,11 +25,12 @@ type Source struct {
 }
 
 //Creates new Source Container
-func NewDst(filepath string) (src *Source, err error) {
+func NewDst(file io.Reader) (src *Source) {
+	var err error
 	src = &Source{FileSet: token.NewFileSet()}
-	src.Dst, err = decorator.ParseFile(src.FileSet, filepath, nil, parser.ParseComments)
-
-	return src, err
+	src.Dst, err = decorator.ParseFile(src.FileSet, "", file, parser.ParseComments)
+	errors.PanicOnError(err, nil)
+	return src
 }
 
 //Find structure by name pattern
@@ -73,13 +74,16 @@ func (src *Source) AddImport(name string, path string) {
 }
 
 //save changes on disk
-func (src *Source) Save(filepath string) {
-	fs, fl := src.Restore()
-	f, _ := os.Create(filepath)
-	defer f.Close()
-	if err := printer.Fprint(f, fs, fl); err != nil {
-		log.Fatal(err)
+func (src *Source) Save(file io.Writer) error {
+	fs, fl, err := decorator.RestoreFile(src.Dst)
+	if err != nil {
+		return err
 	}
+
+	if err := printer.Fprint(file, fs, fl); err != nil {
+		return err
+	}
+	return nil
 }
 
 //restore ast and fset from dst

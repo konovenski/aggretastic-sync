@@ -2,26 +2,16 @@ package olivere_v6_pipelines
 
 import (
 	"github.com/dave/dst"
-	"github.com/dkonovenschi/aggretastic-sync/cmd"
+	"github.com/dkonovenschi/aggretastic-sync/errors"
 	"github.com/dkonovenschi/aggretastic-sync/pretty_dst"
 	"go/token"
+	"gopkg.in/src-d/go-billy.v4"
 	"strings"
 )
 
-type syncNode struct {
-	aggregationType string
-	functionName    string
-}
-
-func newSyncLeaf(aggrType string, functionName string) *syncNode {
-	return &syncNode{
-		aggregationType: aggrType,
-		functionName:    functionName,
-	}
-}
-
 type fileUpdatePipeline struct {
 	Filename string
+	FS       billy.Filesystem
 	src      *pretty_dst.Source
 
 	DesiredPackageName string
@@ -38,45 +28,49 @@ type fileUpdatePipeline struct {
 }
 
 //Run file updater pipeline
-func (fu *fileUpdatePipeline) Run() *syncNode {
+func (fu *fileUpdatePipeline) Run() {
 	fu.parseFile()
 	defer fu.saveFile()
 
 	fu.renamePackage()
 	fu.findTargetStructure()
 	if fu.structure == nil {
-		return nil
+		return
 	}
 	fu.pickStrategy()
 	fu.enrichStructure()
 
 	fu.findTargetFunction()
 	if fu.function == nil {
-		return nil
+		return
 	}
 	fu.enrichFunction()
-	return fu.fillSyncNode()
-}
-
-func (fu *fileUpdatePipeline) fillSyncNode() *syncNode {
-	return newSyncLeaf(fu.strategy.name(), fu.function.GetName())
 }
 
 //parse ast from file
 func (fu *fileUpdatePipeline) parseFile() {
-	var err error
-	fu.src, err = pretty_dst.NewDst(fu.Filename)
-	if err != nil {
-		panic(err)
-	}
+	file, err := fu.FS.Open(fu.Filename)
+	errors.PanicOnError(errCantOpenFile, err)
+
+	fu.src = pretty_dst.NewDst(file)
 }
 
 //save ast changes on disk without search_ prefix
 func (fu *fileUpdatePipeline) saveFile() {
 	filename := strings.Replace(fu.Filename, "search_aggs_", "aggs_", -1)
-	fu.src.Save(filename)
+	file, err := fu.FS.Create(filename)
+	errors.PanicOnError(errCantOpenFile, err)
+	defer func() {
+		err := file.Close()
+		errors.PanicOnError(errCantCloseFile, err)
+	}()
+
+	err = fu.src.Save(file)
+	errors.PanicOnError(errCantWriteFile, err)
+
 	if filename != fu.Filename {
-		cmd.Rm(fu.Filename)
+		err = fu.FS.Remove(fu.Filename)
+		errors.PanicOnError(errCantRemoveFile, err)
 	}
 }
 
@@ -148,7 +142,7 @@ func (injectableStrategy) initCustomField(body *pretty_dst.FunctionBody) {
 	)
 }
 
-func (injectableStrategy) name() string{
+func (injectableStrategy) name() string {
 	return "Injectable"
 }
 
@@ -167,6 +161,6 @@ func (notInjectableStrategy) initCustomField(body *pretty_dst.FunctionBody) {
 	)
 }
 
-func (notInjectableStrategy) name() string{
+func (notInjectableStrategy) name() string {
 	return "NotInjectable"
 }

@@ -2,50 +2,75 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
+	"bytes"
+	"gopkg.in/src-d/go-billy.v4"
+	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"regexp"
 )
 
-var (
-	errAccessDenied = fmt.Errorf("Access denied! ")
-	errFileDoesNotExists = fmt.Errorf("You try to copy nonexistent file! ")
-	errPathDoesNotExists = fmt.Errorf("You try to ls nonexistent path! ")
-)
+//wrapper for cp
+func Cp(fs billy.Filesystem, from string, to string) error {
+	src, err := fs.Open(from)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
 
-//Wrapper for mkdir -p
-func MakePath(path string) {
-	err := os.MkdirAll(path, os.ModePerm)
-	errors.PanicOnError(err, errAccessDenied)
+	dst, err := fs.Create(to)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	_, err = io.Copy(dst, src)
+
+	return err
 }
 
 //wrapper for cp
-func Cp(args ...string) {
-	err := exec.Command("cp", args...).Run()
-	errors.PanicOnError(err, errFileDoesNotExists)
+func CpFromMemory(fs billy.Filesystem, from string, to string) error {
+	src, err := fs.Open(from)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	data, err := ioutil.ReadAll(src)
+	err = ioutil.WriteFile(to, data, os.ModePerm)
+
+	return err
 }
 
-//wrapper for ls
-func Ls(dir string) []os.FileInfo {
-	content, err := ioutil.ReadDir(dir)
-	errors.PanicOnError(err, errPathDoesNotExists)
-	return content
+func CpFromReal(fs billy.Filesystem, from string, to string) error {
+	file, err := ioutil.ReadFile(from)
+	if err != nil {
+		return err
+	}
+	dstFile, err := fs.Create(to)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(dstFile, bytes.NewReader(file))
+	return err
 }
 
 //ls and extract entities by pattern
-func LsByPattern(dir string, pattern string) []os.FileInfo {
+func LsDiskByPattern(dir string, pattern string) ([]os.FileInfo, error) {
 	regex := regexp.MustCompile(pattern)
-	content := Ls(dir)
+	content, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
 	filtered := []os.FileInfo{}
 	for _, file := range content {
 		if regex.MatchString(file.Name()) {
 			filtered = append(filtered, file)
 		}
 	}
-	return filtered
+	return filtered, nil
 }
 
 //return entities from first list which has not been found in second list
@@ -70,17 +95,14 @@ func ListContains(entry os.FileInfo, list []os.FileInfo) bool {
 	return false
 }
 
-//wrapper for rm
-func Rm(filepath string) {
-	err := os.RemoveAll(filepath)
-	if err != nil {
-		errors.PanicOnError(err, errAccessDenied)
-	}
-}
 
 //remove all entities from list in path
-func RmList(path string, list []os.FileInfo) {
+func RmListFromDisk(path string, list []os.FileInfo) error {
 	for _, file := range list {
-		Rm(path + file.Name())
+		err := os.Remove(path + file.Name())
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

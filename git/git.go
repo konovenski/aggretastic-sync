@@ -4,52 +4,59 @@ package git
 import (
 	"bytes"
 	"fmt"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
+	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/storage/memory"
 	"io/ioutil"
 	"os"
 )
 
-var (
-	errBrokenRepo   = fmt.Errorf("Broken repository! Clean cache and retry. ")
-	errClone        = fmt.Errorf("Couldn't clone the repository. ")
-	errAccessDenied = fmt.Errorf("Access denied! Fix rights for this directory and try again. ")
-)
-
 //wrapper for Git clone
-func Clone(url, branch, path string) *git.Repository {
+func Clone(url, branch string) (*git.Repository, error) {
 	fmt.Println("Git Clone:")
-	repository, err := git.PlainClone(path, false, &git.CloneOptions{
+	fs := memfs.New()
+	storage := memory.NewStorage()
+
+	repository, err := git.Clone(storage, fs, &git.CloneOptions{
 		URL:           url,
 		ReferenceName: plumbing.ReferenceName(branch),
 		SingleBranch:  true,
 		Progress:      os.Stdout,
 	})
 
-	errors.PanicOnError(err, errClone)
-	return repository
+	return repository, err
 }
 
 //get current Head hash
-func getLastCommit(repository *git.Repository) []byte {
+func getLastCommit(repository *git.Repository) ([]byte, error) {
 	head, err := repository.Head()
-	errors.PanicOnError(err, errBrokenRepo)
+	if err != nil {
+		return nil, err
+	}
 	hash := head.Hash().String()
-	return []byte(hash)
+	return []byte(hash), nil
 }
 
 //if repo head hash is equal to hash from lock file - return true
-func IsUpToDate(repository *git.Repository, lockPath string) bool {
-	hash := getLastCommit(repository)
+func IsUpToDate(repository *git.Repository, lockPath string) (bool, error) {
+	hash, err := getLastCommit(repository)
+	if err != nil {
+		return false, err
+	}
 	content, _ := ioutil.ReadFile(lockPath) //we can ignore errors here, because []byte(nil) != anyHash
-	return bytes.Equal(hash, content)
+	return bytes.Equal(hash, content), nil
 }
 
 //creates head lock file
-func CreateLockFile(lockpath string, hash plumbing.Hash) {
+func CreateLockFile(lockpath string, hash plumbing.Hash) error {
 	f, err := os.Create(lockpath)
-	errors.PanicOnError(err, errAccessDenied)
-	_, _ = f.Write([]byte(hash.String()))
-	_ = f.Close()
+	if err != nil {
+		return err
+	}
+	_, err = f.Write([]byte(hash.String()))
+	if err != nil {
+		return err
+	}
+	return f.Close()
 }

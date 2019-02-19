@@ -27,6 +27,7 @@ func main() {
 		err = godotenv.Load("conf.env.default")
 		if err != nil {
 			log.Fatal("Error loading .env file")
+			return
 		}
 	}
 
@@ -34,7 +35,8 @@ func main() {
 	case "refs/heads/release-branch.v6":
 		olivere_v6_pipelines.Run()
 	default:
-		panic("Can't find any pipelines for this branch")
+		log.Fatal("Can't find any pipelines for this branch")
+		return
 	}
 
 }

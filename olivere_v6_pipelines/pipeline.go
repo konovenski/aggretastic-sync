@@ -4,8 +4,29 @@ package olivere_v6_pipelines
 import (
 	"fmt"
 	"github.com/dkonovenschi/aggretastic-sync/cmd"
+	"github.com/dkonovenschi/aggretastic-sync/errors"
+	"gopkg.in/src-d/go-billy.v4"
+	"log"
 	"os"
 	"strings"
+)
+
+var (
+	errCantAtoi      = fmt.Errorf("Atoi conversion can't be executed: ")
+
+	errCantOpenFile  = fmt.Errorf("Can't open file: ")
+	errCantCloseFile  = fmt.Errorf("Can't close file: ")
+	errCantReadDir = fmt.Errorf("Can't read from directory: ")
+	errCantWriteFile  = fmt.Errorf("Can't write to file: ")
+	errCantRemoveFile = fmt.Errorf("File can't be removed: ")
+	errCantCopyFile = fmt.Errorf("Can't copy file: ")
+	errCantParseFile = fmt.Errorf("Source file can't be parsed: ")
+
+	errCantClone      = fmt.Errorf("Repository can't be cloned: ")
+	errBrokenRepo     = fmt.Errorf("Repository is broken: ")
+	errCantCreateLock = fmt.Errorf("Can't create lock file: ")
+	errBrokenStorage  = fmt.Errorf("Repository storage is broken: ")
+
 )
 
 type olivere_v6_vars struct {
@@ -27,11 +48,10 @@ func loadVars() olivere_v6_vars {
 		panic("This pipeline requires aaha aggregation types. Please, specify them in Conf.env file. ")
 	}
 	return olivere_v6_vars{
-		repo:                  os.Getenv("ELASTIC_REPO"),
-		repoPath:              os.Getenv("REPO_PATH"),
-		repoHeadLock:          os.Getenv("HEAD_LOCK_FILE"),
-		repoBranch:            os.Getenv("REPO_BRANCH"),
-		buildPath:             os.Getenv("BUILD_PATH"),
+		repo: os.Getenv("ELASTIC_REPO"),
+		repoHeadLock: os.Getenv("HEAD_LOCK_FILE"),
+		repoBranch:   os.Getenv("REPO_BRANCH"),
+		buildPath:             "build-tmp/",
 		elasticExportPatterns: strings.Split(patterns, ", "),
 		deps:                  strings.Split(files, ", "),
 	}
@@ -39,52 +59,58 @@ func loadVars() olivere_v6_vars {
 
 //run olivere_v6 pipeline
 func Run() {
-	vars := loadVars()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatal(fmt.Sprintf("Sync process can't be finished because: %v ", r))
+		}
+	}()
 
-	//clean tmp files after finish
-	defer cmd.Rm(vars.repoPath)
-	defer cmd.Rm(vars.buildPath)
+	vars := loadVars()
 
 	//run git pipeline
 	git := gitPipeline{
 		Url:    vars.repo,
 		Branch: vars.repoBranch,
-		Path:   vars.repoPath,
 		Lock:   vars.repoHeadLock,
 	}
-	if git.Run() {
-		fmt.Println("Aggretastic is already up-to-date with " + vars.repoBranch)
+	isUpToDate, fs := git.Run()
+
+	if isUpToDate {
+		log.Println("Aggretastic is already up-to-date with " + vars.repoBranch)
 		return
 	}
 
 	//run package updater
 	updater := packageUpdaterPipeline{
-		BuildPath: vars.buildPath,
 		RepoPath:  vars.repoPath,
 		Patterns:  vars.elasticExportPatterns,
 		Deps:      vars.deps,
+		FS:        fs,
+		BuildPath: vars.buildPath,
 	}
 	updater.Run()
 
-	generator := sourceGenerationPipeline{
-		SyncNodes:updater.SyncNodes,
-	}
-	generator.run()
-
-	buildPackage(vars.buildPath)
+	buildPackage(fs, vars.buildPath)
 }
 
 //copy updater artifacts in main repository and remove deprecated
-func buildPackage(buildPath string) {
-	originFileList := cmd.LsByPattern("./", "^aggs_(.*).go$")
-	buildFileList := cmd.Ls(buildPath)
+func buildPackage(fs billy.Filesystem, buildPath string) {
+	originFileList, err := cmd.LsDiskByPattern("./", "^aggs_(.*).go$")
+	errors.PanicOnError(errCantReadDir, err)
+
+	buildFileList, err := fs.ReadDir(buildPath)
+	errors.PanicOnError(errCantReadDir, err)
+
 	deprecated := cmd.ListDiff(originFileList, buildFileList)
 
 	//copy new files to project
-	cmd.ExtractFiles(".*", buildPath, "./")
+	err = cmd.ExtractFilesFromMemory(fs, ".*", buildPath, "./")
+	errors.PanicOnError(errCantCopyFile, err)
 
 	//remove deprecated files
-	cmd.RmList("./", deprecated)
+	err = cmd.RmListFromDisk("./", deprecated)
+	errors.PanicOnError(errCantRemoveFile, err)
+
 	if len(deprecated) > 0 {
 		fmt.Println("Deprecated files has been removed:")
 		for _, file := range deprecated {
