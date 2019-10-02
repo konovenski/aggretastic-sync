@@ -1,8 +1,8 @@
 package olivere_v6_pipelines
 
 import (
-	"github.com/dkonovenschi/aggretastic-sync/errors"
-	"github.com/dkonovenschi/aggretastic-sync/git"
+	"github.com/konovenschi/aggretastic-sync/errors"
+	"github.com/konovenschi/aggretastic-sync/git"
 	"gopkg.in/src-d/go-billy.v4"
 )
 

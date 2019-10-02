@@ -2,7 +2,7 @@ package olivere_v6_pipelines
 
 import (
 	"fmt"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
+	"github.com/konovenschi/aggretastic-sync/errors"
 	"go/ast"
 	"go/importer"
 	"go/parser"
