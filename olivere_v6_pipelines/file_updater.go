@@ -2,8 +2,8 @@ package olivere_v6_pipelines
 
 import (
 	"github.com/dave/dst"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
-	"github.com/dkonovenschi/aggretastic-sync/pretty_dst"
+	"github.com/konovenschi/aggretastic-sync/errors"
+	"github.com/konovenschi/aggretastic-sync/pretty_dst"
 	"go/token"
 	"gopkg.in/src-d/go-billy.v4"
 	"strings"

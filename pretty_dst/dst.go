@@ -9,7 +9,7 @@ package pretty_dst
 import (
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
+	"github.com/konovenschi/aggretastic-sync/errors"
 	"go/ast"
 	"go/parser"
 	"go/printer"

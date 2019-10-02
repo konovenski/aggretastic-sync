@@ -3,8 +3,8 @@ package olivere_v6_pipelines
 
 import (
 	"fmt"
-	"github.com/dkonovenschi/aggretastic-sync/cmd"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
+	"github.com/konovenschi/aggretastic-sync/cmd"
+	"github.com/konovenschi/aggretastic-sync/errors"
 	"gopkg.in/src-d/go-billy.v4"
 	"log"
 	"os"

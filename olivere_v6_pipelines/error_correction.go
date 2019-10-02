@@ -2,8 +2,8 @@ package olivere_v6_pipelines
 
 import (
 	"fmt"
-	"github.com/dkonovenschi/aggretastic-sync/errors"
-	"github.com/dkonovenschi/aggretastic-sync/pretty_dst"
+	"github.com/konovenschi/aggretastic-sync/errors"
+	"github.com/konovenschi/aggretastic-sync/pretty_dst"
 	"github.com/dlclark/regexp2"
 	"go/ast"
 	"go/parser"
