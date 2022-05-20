@@ -57,7 +57,7 @@ func (up *packageUpdaterPipeline) enrichFiles() {
 			Filename:                   up.BuildPath + name,
 			DesiredPackageName:         "aggretastic",
 			TargetStructureNamePattern: "(.*)Aggregation$",
-			TargetFunctionNamePattern:  "^New(.*)Aggregation$",
+			TargetFunctionNamePattern:  "^FuckAAHA(.*)Aggregation$",
 			FS:                         up.FS,
 		}
 		fu.Run()
